@@ -13,7 +13,7 @@ Capistrano::Configuration.instance(:must_exist).load do
           set :thinking_sphinx_configure_args, "--prefix=$HOME/software"
 DESC
 
-      task :sphinx do
+      task :sphinx, :roles => lambda{ thinking_sphinx_role } do
         with_postgres = false
         begin
           run "which pg_config" do |channel, stream, data|
@@ -44,39 +44,39 @@ DESC
       end
 
       desc "Install Thinking Sphinx as a gem"
-      task :ts do
+      task :ts, :roles => lambda{ thinking_sphinx_role } do
         run "#{try_sudo} gem install thinking-sphinx"
       end
     end
 
     desc "Generate the Sphinx configuration file"
-    task :configure do
+    task :configure, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:configure"
     end
 
     desc "Index data"
-    task :index do
+    task :index, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:index"
     end
 
     desc "Start the Sphinx daemon"
-    task :start do
+    task :start, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:configure thinking_sphinx:start"
     end
 
     desc "Stop the Sphinx daemon"
-    task :stop do
+    task :stop, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:configure thinking_sphinx:stop"
     end
 
     desc "Stop and then start the Sphinx daemon"
-    task :restart do
+    task :restart, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:configure thinking_sphinx:stop \
         thinking_sphinx:start"
     end
 
     desc "Stop, re-index and then start the Sphinx daemon"
-    task :rebuild do
+    task :rebuild, :roles => lambda{ thinking_sphinx_role } do
       rake "thinking_sphinx:configure thinking_sphinx:stop \
         thinking_sphinx:reindex \
         thinking_sphinx:start"
@@ -94,6 +94,10 @@ DESC
       tasks.each do |t|
         run "if [ -d #{release_path} ]; then cd #{release_path}; else cd #{current_path}; fi; #{rake} RAILS_ENV=#{rails_env} #{t}"
       end
+    end
+
+    def thinking_sphinx_role
+      roles.include?(:thinking_sphinx) ? :thinking_sphinx : :app
     end
   end
 end
